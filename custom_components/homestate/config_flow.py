@@ -68,7 +68,6 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
         self._ai_results: list[dict] = []
 
     def _save_options(self):
-        """Save all options to config entry."""
         return self.async_create_entry(
             title="HomeState",
             data={
@@ -151,20 +150,20 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
                 return await self.async_step_describe()
             return await self.async_step_init()
 
+        entity_ids = self._get_sensor_entity_ids()
         return self.async_show_form(
             step_id="select_devices",
             data_schema=vol.Schema(
                 {
-                    vol.Required("entities"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(
-                            multiple=True,
-                            filter=selector.EntityFilterConfig(
-                                domain=["sensor", "binary_sensor", "device_tracker"],
-                            ),
-                        )
+                    vol.Required("entities"): vol.All(
+                        list, vol.Length(min=1)
                     ),
                 }
             ),
+            description_placeholders={
+                "count": str(len(entity_ids)),
+                "hint": "输入实体 ID，逗号分隔",
+            },
         )
 
     # ── natural language description ───────────────────────
@@ -180,11 +179,7 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="describe",
             data_schema=vol.Schema(
-                {
-                    vol.Required("description"): selector.TextSelector(
-                        selector.TextSelectorConfig(multiline=True)
-                    ),
-                }
+                {vol.Required("description"): str}
             ),
             description_placeholders={"devices": device_list},
         )
@@ -241,17 +236,12 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             }
             return await self.async_step_init()
 
+        entity_ids = self._get_sensor_entity_ids()
         return self.async_show_form(
             step_id="manual_add",
             data_schema=vol.Schema(
                 {
-                    vol.Required("entity_id"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(
-                            filter=selector.EntityFilterConfig(
-                                domain=["sensor", "binary_sensor", "device_tracker"],
-                            ),
-                        )
-                    ),
+                    vol.Required("entity_id"): vol.In(entity_ids),
                     vol.Required("room"): str,
                     vol.Optional("semantic", default="room_motion"): vol.In(
                         SEMANTIC_TYPES
@@ -300,17 +290,20 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="describe",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("description"): selector.TextSelector(
-                        selector.TextSelectorConfig(multiline=True)
-                    ),
-                }
-            ),
+            data_schema=vol.Schema({vol.Required("description"): str}),
             description_placeholders={
                 "devices": "\n".join(f"- {e}" for e in self._selected)
             },
             errors={"base": "ai_no_result"},
+        )
+
+    def _get_sensor_entity_ids(self) -> list[str]:
+        return sorted(
+            state.entity_id
+            for state in self.hass.states.async_all()
+            if state.entity_id.startswith(
+                ("sensor.", "binary_sensor.", "device_tracker.")
+            )
         )
 
     def _get_entity_map(self) -> dict:
