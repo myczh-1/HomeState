@@ -34,8 +34,7 @@ class HomeStateConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(
                 title="HomeState",
-                data={},
-                options={
+                data={
                     CONF_RUN_MODE: user_input.get(CONF_RUN_MODE, DEFAULT_RUN_MODE),
                     CONF_ENTITIES: {},
                 },
@@ -59,11 +58,13 @@ class HomeStateConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class HomeStateOptionsFlow(config_entries.OptionsFlow):
     def __init__(self, config_entry):
-        self._entities = dict(config_entry.options.get(CONF_ENTITIES, {}))
-        self._run_mode = config_entry.options.get(CONF_RUN_MODE, DEFAULT_RUN_MODE)
-        self._ai_url = config_entry.options.get(CONF_AI_BASE_URL, "")
-        self._ai_key = config_entry.options.get(CONF_AI_API_KEY, "")
-        self._ai_model = config_entry.options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)
+        self._config_entry = config_entry
+        config = {**config_entry.data, **config_entry.options}
+        self._entities = dict(config.get(CONF_ENTITIES, {}))
+        self._run_mode = config.get(CONF_RUN_MODE, DEFAULT_RUN_MODE)
+        self._ai_url = config.get(CONF_AI_BASE_URL, "")
+        self._ai_key = config.get(CONF_AI_API_KEY, "")
+        self._ai_model = config.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)
         self._selected: list[str] = []
         self._ai_results: list[dict] = []
 
@@ -144,19 +145,25 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
     # ── device selector ────────────────────────────────────
 
     async def async_step_select_devices(self, user_input=None):
+        entity_ids = self._get_sensor_entity_ids()
+        if not entity_ids:
+            return self.async_abort(reason="no_supported_entities")
+
         if user_input is not None:
             self._selected = user_input.get("entities", [])
             if self._selected:
                 return await self.async_step_describe()
             return await self.async_step_init()
 
-        entity_ids = self._get_sensor_entity_ids()
         return self.async_show_form(
             step_id="select_devices",
             data_schema=vol.Schema(
                 {
-                    vol.Required("entities"): vol.All(
-                        list, vol.Length(min=1)
+                    vol.Required("entities"): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            multiple=True,
+                            include_entities=entity_ids,
+                        )
                     ),
                 }
             ),
@@ -226,6 +233,10 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
     # ── manual add ─────────────────────────────────────────
 
     async def async_step_manual_add(self, user_input=None):
+        entity_ids = self._get_sensor_entity_ids()
+        if not entity_ids:
+            return self.async_abort(reason="no_supported_entities")
+
         if user_input is not None:
             eid = user_input["entity_id"]
             self._entities[eid] = {
@@ -236,12 +247,16 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             }
             return await self.async_step_init()
 
-        entity_ids = self._get_sensor_entity_ids()
         return self.async_show_form(
             step_id="manual_add",
             data_schema=vol.Schema(
                 {
-                    vol.Required("entity_id"): vol.In(entity_ids),
+                    vol.Required("entity_id"): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            multiple=False,
+                            include_entities=entity_ids,
+                        )
+                    ),
                     vol.Required("room"): str,
                     vol.Optional("semantic", default="room_motion"): vol.In(
                         SEMANTIC_TYPES
@@ -265,7 +280,14 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="remove",
             data_schema=vol.Schema(
-                {vol.Required("entity_id"): vol.In(list(self._entities.keys()))}
+                {
+                    vol.Required("entity_id"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=sorted(self._entities.keys()),
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
             ),
         )
 

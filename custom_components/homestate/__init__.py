@@ -17,8 +17,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    coordinator = HomeStateCoordinator(hass, entry.entry_id, entry.options)
+    coordinator = HomeStateCoordinator(hass, entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.async_on_unload(entry.add_update_listener(async_options_updated))
 
     await coordinator.async_config_entry_first_refresh()
     await coordinator.async_start()

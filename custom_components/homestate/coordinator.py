@@ -10,7 +10,15 @@ from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONF_ENTITIES, CONF_RUN_MODE, DEFAULT_RUN_MODE, DEFAULT_SCAN_INTERVAL, DOMAIN
+from homeassistant.config_entries import ConfigEntry
+
+from .const import (
+    CONF_ENTITIES,
+    CONF_RUN_MODE,
+    DEFAULT_RUN_MODE,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 from .context import ContextEngine
 from .decision import DecisionEngine
 from .facts import FactsStore
@@ -24,14 +32,16 @@ _LOGGER = logging.getLogger(__name__)
 class HomeStateCoordinator(DataUpdateCoordinator):
     """Coordinates the HomeState context engine with HA events."""
 
-    def __init__(self, hass: HomeAssistant, entry_id: str, options: dict) -> None:
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=None,  # event-driven
         )
-        self.entry_id = entry_id
+        self.config_entry = config_entry
+        self.entry_id = config_entry.entry_id
+        config = {**config_entry.data, **config_entry.options}
 
         # Initialize layers
         self.facts = FactsStore()
@@ -39,13 +49,13 @@ class HomeStateCoordinator(DataUpdateCoordinator):
         self.context = ContextEngine()
         self.guardrails = GuardrailsEngine()
 
-        run_mode = RunMode(options.get(CONF_RUN_MODE, DEFAULT_RUN_MODE))
+        run_mode = RunMode(config.get(CONF_RUN_MODE, DEFAULT_RUN_MODE))
         self.decision = DecisionEngine(
             self.context, self.guardrails, self.semantic, run_mode
         )
 
         # Load semantic mappings from options
-        entities = options.get(CONF_ENTITIES, {})
+        entities = config.get(CONF_ENTITIES, {})
         if entities:
             self.semantic.load_from_dict(entities)
 

@@ -68,6 +68,9 @@
     },
     "error": {
       "ai_no_result": "AI returned no results, please try again"
+    },
+    "abort": {
+      "no_supported_entities": "No supported entities found. Make sure Home Assistant already has sensor, binary_sensor, or device_tracker entities."
     }
   }
 }

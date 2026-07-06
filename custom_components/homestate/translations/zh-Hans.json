@@ -70,6 +70,7 @@
       "ai_no_result": "AI 未返回有效结果，请重新描述"
     },
     "abort": {
+      "no_supported_entities": "当前没有可映射的实体，请先确认 HA 中已有 sensor、binary_sensor 或 device_tracker。",
       "already_configured": "已经配置"
     }
   }
