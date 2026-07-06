@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -14,7 +15,7 @@ from .context import ContextEngine
 from .decision import DecisionEngine
 from .facts import FactsStore
 from .guardrails import GuardrailsEngine
-from .models import FactEvent, RunMode
+from .models import ContextState, FactEvent, RunMode
 from .semantic import SemanticRegistry
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,19 +49,22 @@ class HomeStateCoordinator(DataUpdateCoordinator):
         if entities:
             self.semantic.load_from_dict(entities)
 
+    async def _async_update_data(self) -> ContextState:
+        """Return current context state (called by coordinator framework)."""
+        return self.context.state
+
     async def async_start(self) -> None:
         """Subscribe to HA state changes and start tick loop."""
         # Subscribe to state_changed events
         self.hass.bus.async_listen(EVENT_STATE_CHANGED, self._handle_state_changed)
 
         # Periodic tick for confidence decay
-        async def _tick_loop():
+        async def _tick_loop() -> None:
             while True:
+                await asyncio.sleep(DEFAULT_SCAN_INTERVAL)
                 await self.hass.async_add_executor_job(self.context.tick)
                 self.async_set_updated_data(self.context.state)
-                await self._async_sleep(DEFAULT_SCAN_INTERVAL)
 
-        import asyncio
         self._tick_task = asyncio.create_task(_tick_loop())
 
         _LOGGER.info(
@@ -68,11 +72,6 @@ class HomeStateCoordinator(DataUpdateCoordinator):
             len(self.semantic.all()),
             self.decision.mode.value,
         )
-
-    @staticmethod
-    async def _async_sleep(seconds: int) -> None:
-        import asyncio
-        await asyncio.sleep(seconds)
 
     @callback
     def _handle_state_changed(self, event: Event) -> None:
@@ -96,7 +95,6 @@ class HomeStateCoordinator(DataUpdateCoordinator):
         sem = self.semantic.get(entity_id)
         if sem is not None:
             self.context.process_fact(fact, sem)
-            # Notify sensors to update
             self.async_set_updated_data(self.context.state)
 
     async def async_update_semantic(self, entity_id: str, mapping: dict) -> None:
