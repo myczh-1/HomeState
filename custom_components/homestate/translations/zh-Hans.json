@@ -31,9 +31,9 @@
       },
       "select_devices": {
         "title": "选择设备",
-        "description": "共 {count} 个可用设备。{hint}",
+        "description": "选择要映射的传感器设备。",
         "data": {
-          "entities": "选择设备"
+          "entities": "设备列表"
         }
       },
       "describe": {
@@ -53,7 +53,7 @@
       "manual_add": {
         "title": "手动添加映射",
         "data": {
-          "entity_id": "实体 ID",
+          "entity_id": "实体",
           "room": "房间",
           "semantic": "语义类型",
           "confidence": "置信度"
@@ -68,6 +68,9 @@
     },
     "error": {
       "ai_no_result": "AI 未返回有效结果，请重新描述"
+    },
+    "abort": {
+      "already_configured": "已经配置"
     }
   }
 }
