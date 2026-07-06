@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "codeowners": [],
   "dependencies": [],
-  "requirements": [],
+  "requirements": ["aiohttp"],
   "config_flow": true,
-  "iot_class": "local_push"
+  "iot_class": "local_push",
+  "integration_type": "hub"
 }

@@ -1,0 +1,13 @@
+services:
+  homestate:
+    build: .
+    container_name: homestate
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    volumes:
+      - ./data/config.json:/etc/homestate/config.json:ro
+      - ./data/semantics.json:/data/semantics.json
+      - ./data:/data
+    environment:
+      - TZ=Asia/Shanghai
