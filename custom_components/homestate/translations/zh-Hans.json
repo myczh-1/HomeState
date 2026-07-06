@@ -14,21 +14,44 @@
     "step": {
       "init": {
         "title": "HomeState 设置",
-        "description": "配置运行模式。",
+        "description": "{summary}",
         "data": {
-          "run_mode": "运行模式"
+          "run_mode": "运行模式",
+          "action": "操作"
         }
       },
-      "entity_list": {
-        "title": "语义映射",
-        "description": "{summary}",
+      "ai_config": {
+        "title": "配置 AI 接口",
+        "description": "填入 OpenAI 兼容接口信息。支持 OpenAI、DeepSeek、Ollama 等。",
+        "data": {
+          "ai_base_url": "API 地址",
+          "ai_api_key": "API Key",
+          "ai_model": "模型名称"
+        }
+      },
+      "select_devices": {
+        "title": "选择设备",
+        "description": "共 {count} 个可用设备。{hint}",
+        "data": {
+          "entities": "选择设备"
+        }
+      },
+      "describe": {
+        "title": "描述设备",
+        "description": "已选设备：\n{devices}\n\n用自然语言描述这些设备在哪个房间、什么用途。",
+        "data": {
+          "description": "描述"
+        }
+      },
+      "review": {
+        "title": "确认映射",
+        "description": "AI 生成的映射：\n{results}",
         "data": {
           "action": "操作"
         }
       },
-      "add_entity": {
-        "title": "添加传感器映射",
-        "description": "将传感器映射到房间和语义。",
+      "manual_add": {
+        "title": "手动添加映射",
         "data": {
           "entity_id": "实体 ID",
           "room": "房间",
@@ -36,13 +59,15 @@
           "confidence": "置信度"
         }
       },
-      "remove_entity": {
-        "title": "删除传感器映射",
-        "description": "选择要删除的映射。",
+      "remove": {
+        "title": "删除映射",
         "data": {
-          "entity_id": "实体"
+          "entity_id": "选择要删除的映射"
         }
       }
+    },
+    "error": {
+      "ai_no_result": "AI 未返回有效结果，请重新描述"
     }
   }
 }

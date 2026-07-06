@@ -14,21 +14,44 @@
     "step": {
       "init": {
         "title": "HomeState Settings",
-        "description": "Configure run mode.",
+        "description": "{summary}",
         "data": {
-          "run_mode": "Run Mode"
+          "run_mode": "Run Mode",
+          "action": "Action"
         }
       },
-      "entity_list": {
-        "title": "Semantic Mappings",
-        "description": "{summary}",
+      "ai_config": {
+        "title": "Configure AI",
+        "description": "Enter OpenAI-compatible API details. Works with OpenAI, DeepSeek, Ollama, etc.",
+        "data": {
+          "ai_base_url": "API Base URL",
+          "ai_api_key": "API Key",
+          "ai_model": "Model Name"
+        }
+      },
+      "select_devices": {
+        "title": "Select Devices",
+        "description": "{count} devices available. {hint}",
+        "data": {
+          "entities": "Select Devices"
+        }
+      },
+      "describe": {
+        "title": "Describe Devices",
+        "description": "Selected devices:\n{devices}\n\nDescribe these devices in natural language — what room, what purpose.",
+        "data": {
+          "description": "Description"
+        }
+      },
+      "review": {
+        "title": "Review Mappings",
+        "description": "AI-generated mappings:\n{results}",
         "data": {
           "action": "Action"
         }
       },
-      "add_entity": {
-        "title": "Add Sensor Mapping",
-        "description": "Map a sensor to a room and semantic meaning.",
+      "manual_add": {
+        "title": "Add Mapping",
         "data": {
           "entity_id": "Entity ID",
           "room": "Room",
@@ -36,13 +59,15 @@
           "confidence": "Confidence"
         }
       },
-      "remove_entity": {
-        "title": "Remove Sensor Mapping",
-        "description": "Select a mapping to remove.",
+      "remove": {
+        "title": "Remove Mapping",
         "data": {
-          "entity_id": "Entity"
+          "entity_id": "Select mapping to remove"
         }
       }
+    },
+    "error": {
+      "ai_no_result": "AI returned no results, please try again"
     }
   }
 }
