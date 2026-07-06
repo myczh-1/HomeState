@@ -3,4 +3,5 @@ config.json
 homestate.db
 *.db
 semantics.json
-homestate
+/homestate
+/data

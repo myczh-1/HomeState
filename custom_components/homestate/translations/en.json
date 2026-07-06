@@ -3,9 +3,44 @@
     "step": {
       "user": {
         "title": "HomeState",
-        "description": "Configure the HomeState context engine connection.",
+        "description": "Configure the HomeState context engine.",
         "data": {
-          "api_url": "API URL"
+          "run_mode": "Run Mode"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HomeState Settings",
+        "description": "Configure run mode.",
+        "data": {
+          "run_mode": "Run Mode"
+        }
+      },
+      "entity_list": {
+        "title": "Semantic Mappings",
+        "description": "{summary}",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_entity": {
+        "title": "Add Sensor Mapping",
+        "description": "Map a sensor to a room and semantic meaning.",
+        "data": {
+          "entity_id": "Entity ID",
+          "room": "Room",
+          "semantic": "Semantic Type",
+          "confidence": "Confidence"
+        }
+      },
+      "remove_entity": {
+        "title": "Remove Sensor Mapping",
+        "description": "Select a mapping to remove.",
+        "data": {
+          "entity_id": "Entity"
         }
       }
     }

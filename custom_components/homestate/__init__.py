@@ -1,29 +1,41 @@
-"""The HomeState integration."""
+"""HomeState — semantic context layer for Home Assistant."""
+
+import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
+from .coordinator import HomeStateCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up from YAML (not used, config flow only)."""
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up HomeState from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = entry.data
+    coordinator = HomeStateCoordinator(hass, entry.entry_id, entry.options)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    await coordinator.async_config_entry_first_refresh()
+    await coordinator.async_start()
 
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
+        if hasattr(coordinator, "_tick_task"):
+            coordinator._tick_task.cancel()
     return unload_ok
+
+
+async def async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Handle options update — reload the integration."""
+    await hass.config_entries.async_reload(entry.entry_id)
