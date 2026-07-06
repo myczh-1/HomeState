@@ -1,0 +1,45 @@
+[
+  {
+    "entity_id": "binary_sensor.desk_motion",
+    "room": "study",
+    "semantic": "desk_presence",
+    "meaning": ["user_at_computer", "working_indicator"],
+    "confidence": 0.9
+  },
+  {
+    "entity_id": "binary_sensor.study_motion",
+    "room": "study",
+    "semantic": "room_motion",
+    "confidence": 0.85
+  },
+  {
+    "entity_id": "binary_sensor.bedroom_motion",
+    "room": "bedroom",
+    "semantic": "room_motion",
+    "confidence": 0.85
+  },
+  {
+    "entity_id": "light.study_main",
+    "room": "study",
+    "semantic": "main_light",
+    "role": "main_light",
+    "control_policy": "auto",
+    "confidence": 1.0
+  },
+  {
+    "entity_id": "light.study_led",
+    "room": "study",
+    "semantic": "ambient_light",
+    "role": "ambient_light",
+    "control_policy": "manual_protected",
+    "confidence": 1.0
+  },
+  {
+    "entity_id": "light.bedroom_main",
+    "room": "bedroom",
+    "semantic": "main_light",
+    "role": "main_light",
+    "control_policy": "auto",
+    "confidence": 1.0
+  }
+]

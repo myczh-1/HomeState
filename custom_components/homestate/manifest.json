@@ -1,0 +1,10 @@
+{
+  "domain": "homestate",
+  "name": "HomeState",
+  "version": "0.1.0",
+  "codeowners": [],
+  "dependencies": [],
+  "requirements": [],
+  "config_flow": true,
+  "iot_class": "local_push"
+}

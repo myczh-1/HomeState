@@ -1,0 +1,6 @@
+# HomeState
+config.json
+homestate.db
+*.db
+semantics.json
+homestate

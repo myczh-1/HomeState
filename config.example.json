@@ -1,0 +1,10 @@
+{
+  "ha_url": "ws://homeassistant.local:8123/api/websocket",
+  "ha_token": "YOUR_LONG_LIVED_ACCESS_TOKEN",
+  "api_port": 8099,
+  "db_path": "homestate.db",
+  "run_mode": "observe",
+  "ai_base_url": "",
+  "ai_api_key": "",
+  "ai_model": ""
+}
