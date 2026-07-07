@@ -65,7 +65,6 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
         self._ai_url = config.get(CONF_AI_BASE_URL, "")
         self._ai_key = config.get(CONF_AI_API_KEY, "")
         self._ai_model = config.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)
-        self._selected: list[str] = []
         self._ai_results: list[dict] = []
 
     def _save_options(self):
@@ -89,7 +88,7 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             if action == "ai_setup":
                 return await self.async_step_ai_config()
             if action == "ai_add":
-                return await self.async_step_select_devices()
+                return await self._call_ai()
             if action == "manual_add":
                 return await self.async_step_manual_add()
             if action == "remove":
@@ -99,7 +98,7 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
         has_ai = bool(self._ai_url and self._ai_key)
         choices = {"done": f"完成保存 ({len(self._entities)} 个映射)"}
         if has_ai:
-            choices["ai_add"] = "AI 自然语言添加"
+            choices["ai_add"] = "AI 自动识别映射"
         else:
             choices["ai_setup"] = "配置 AI 接口"
         choices["manual_add"] = "手动添加映射"
@@ -142,54 +141,6 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             ),
         )
 
-    # ── device selector ────────────────────────────────────
-
-    async def async_step_select_devices(self, user_input=None):
-        entity_ids = self._get_sensor_entity_ids()
-        if not entity_ids:
-            return self.async_abort(reason="no_supported_entities")
-
-        if user_input is not None:
-            self._selected = user_input.get("entities", [])
-            if self._selected:
-                return await self.async_step_describe()
-            return await self.async_step_init()
-
-        return self.async_show_form(
-            step_id="select_devices",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("entities"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(
-                            multiple=True,
-                            include_entities=entity_ids,
-                        )
-                    ),
-                }
-            ),
-            description_placeholders={
-                "count": str(len(entity_ids)),
-                "hint": "输入实体 ID，逗号分隔",
-            },
-        )
-
-    # ── natural language description ───────────────────────
-
-    async def async_step_describe(self, user_input=None):
-        if user_input is not None:
-            desc = user_input.get("description", "")
-            if desc:
-                return await self._call_ai(desc)
-            return await self.async_step_init()
-
-        device_list = "\n".join(f"- {eid}" for eid in self._selected)
-        return self.async_show_form(
-            step_id="describe",
-            data_schema=vol.Schema(
-                {vol.Required("description"): str}
-            ),
-            description_placeholders={"devices": device_list},
-        )
 
     # ── review AI results ──────────────────────────────────
 
@@ -207,7 +158,7 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
                             "meaning": item.get("meaning", []),
                         }
                 return await self.async_step_init()
-            return await self.async_step_describe()
+            return await self._call_ai()
 
         lines = []
         for item in self._ai_results:
@@ -215,7 +166,9 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             room = item.get("room", "?")
             sem = item.get("semantic", "?")
             conf = item.get("confidence", 0.9)
-            lines.append(f"- {eid} → {room} ({sem}, {conf})")
+            name = item.get("friendly_name", "")
+            label = f"{name} ({eid})" if name else eid
+            lines.append(f"- {label} → {room} ({sem}, {conf})")
         summary = "\n".join(lines) if lines else "AI 未返回结果"
 
         return self.async_show_form(
@@ -223,7 +176,7 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Optional("action", default="accept"): vol.In(
-                        {"accept": "确认添加", "retry": "重新描述"}
+                    {"accept": "确认添加", "retry": "重新识别"}
                     ),
                 }
             ),
@@ -293,29 +246,37 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
 
     # ── helpers ────────────────────────────────────────────
 
-    async def _call_ai(self, description: str):
+    async def _call_ai(self):
         entity_map = self._get_entity_map()
         available = [
             {
                 "entity_id": eid,
                 "name": info.get("name", ""),
                 "platform": info.get("platform", ""),
+                "device_class": info.get("device_class", ""),
+                "area": info.get("area", ""),
             }
             for eid, info in entity_map.items()
-            if eid in self._selected
         ]
         self._ai_results = await parse_entities(
-            self._ai_url, self._ai_key, self._ai_model, description, available
+            self._ai_url, self._ai_key, self._ai_model, available
         )
         if self._ai_results:
             return await self.async_step_review()
 
         return self.async_show_form(
-            step_id="describe",
-            data_schema=vol.Schema({vol.Required("description"): str}),
-            description_placeholders={
-                "devices": "\n".join(f"- {e}" for e in self._selected)
-            },
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_RUN_MODE, default=self._run_mode): vol.In(
+                        RUN_MODES
+                    ),
+                    vol.Optional("action", default="done"): vol.In(
+                        {"done": f"完成保存 ({len(self._entities)} 个映射)", "ai_add": "AI 自动识别映射"}
+                    ),
+                }
+            ),
+            description_placeholders={"summary": self._build_summary()},
             errors={"base": "ai_no_result"},
         )
 
@@ -335,9 +296,17 @@ class HomeStateOptionsFlow(config_entries.OptionsFlow):
             if eid.startswith(
                 ("sensor.", "binary_sensor.", "device_tracker.", "switch.", "light.")
             ):
+                attrs = state.attributes
+                area = ""
+                if hasattr(state, "entity_id"):
+                    # Try to get area from device registry via entity_id
+                    # HA stores area_id in state attributes for some integrations
+                    area = attrs.get("area_id", "") or attrs.get("area_name", "")
                 result[eid] = {
-                    "name": state.attributes.get("friendly_name", ""),
+                    "name": attrs.get("friendly_name", ""),
                     "platform": eid.split(".")[0],
+                    "device_class": attrs.get("device_class", ""),
+                    "area": area,
                 }
         return result
 

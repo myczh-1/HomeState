@@ -29,20 +29,6 @@
           "ai_model": "Model Name"
         }
       },
-      "select_devices": {
-        "title": "Select Devices",
-        "description": "{count} devices available. {hint}",
-        "data": {
-          "entities": "Select Devices"
-        }
-      },
-      "describe": {
-        "title": "Describe Devices",
-        "description": "Selected devices:\n{devices}\n\nDescribe these devices in natural language — what room, what purpose.",
-        "data": {
-          "description": "Description"
-        }
-      },
       "review": {
         "title": "Review Mappings",
         "description": "AI-generated mappings:\n{results}",

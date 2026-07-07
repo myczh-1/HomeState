@@ -29,27 +29,6 @@
           "ai_model": "模型名称"
         }
       },
-      "select_devices": {
-        "title": "选择设备",
-        "description": "选择要映射的传感器设备。",
-        "data": {
-          "entities": "设备列表"
-        }
-      },
-      "describe": {
-        "title": "描述设备",
-        "description": "已选设备：\n{devices}\n\n用自然语言描述这些设备在哪个房间、什么用途。",
-        "data": {
-          "description": "描述"
-        }
-      },
-      "review": {
-        "title": "确认映射",
-        "description": "AI 生成的映射：\n{results}",
-        "data": {
-          "action": "操作"
-        }
-      },
       "manual_add": {
         "title": "手动添加映射",
         "data": {
@@ -67,7 +46,7 @@
       }
     },
     "error": {
-      "ai_no_result": "AI 未返回有效结果，请重新描述"
+      "ai_no_result": "AI 未返回有效结果，请重试"
     },
     "abort": {
       "no_supported_entities": "当前没有可映射的实体，请先确认 HA 中已有 sensor、binary_sensor 或 device_tracker。",
