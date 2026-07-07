@@ -82,8 +82,7 @@ async def parse_entities(
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+            async with session.post(url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=120, connect=10)) as resp:
                 if resp.status != 200:
                     body = await resp.text()
                     _LOGGER.error("AI API error %d: %s", resp.status, body)
