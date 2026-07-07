@@ -67,6 +67,7 @@ async def parse_entities(
 请自动识别每个设备的房间和语义类型，返回映射结果。"""
 
     url = f"{base_url.rstrip('/')}/v1/chat/completions"
+    _LOGGER.debug("AI request: url=%s, model=%s, entities=%d", url, model, len(available_entities))
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -93,7 +94,7 @@ async def parse_entities(
                 return _parse_json_response(content)
 
     except Exception as err:
-        _LOGGER.error("AI request failed: %s", err)
+        _LOGGER.error("AI request failed: %s", repr(err), exc_info=True)
         return []
 
 
